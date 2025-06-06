@@ -144,12 +144,28 @@ export const TemplateListPage = (props: TemplateListPageProps) => {
 
   const additionalLinksForEntity = useCallback(
     (template: TemplateEntityV1beta3) => {
-      const { kind, namespace, name } = parseEntityRef(
-        stringifyEntityRef(template),
-      );
-      return template.metadata.annotations?.['backstage.io/techdocs-ref'] &&
-        viewTechDocsLink
-        ? [
+      const techdocsRef =
+        template.metadata.annotations?.['backstage.io/techdocs-ref'];
+      const techdocsEntity =
+        template.metadata.annotations?.['backstage.io/techdocs-entity'];
+      if (techdocsRef && viewTechDocsLink) {
+        const { kind, namespace, name } = parseEntityRef(
+          stringifyEntityRef(template),
+        );
+        return [
+          {
+            icon: app.getSystemIcon('docs') ?? DocsIcon,
+            text: t(
+              'templateListPage.additionalLinksForEntity.viewTechDocsTitle',
+            ),
+            url: viewTechDocsLink({ kind, namespace, name }),
+          },
+        ];
+      }
+      if (techdocsEntity && viewTechDocsLink) {
+        try {
+          const { kind, namespace, name } = parseEntityRef(techdocsEntity);
+          return [
             {
               icon: app.getSystemIcon('docs') ?? DocsIcon,
               text: t(
@@ -157,8 +173,12 @@ export const TemplateListPage = (props: TemplateListPageProps) => {
               ),
               url: viewTechDocsLink({ kind, namespace, name }),
             },
-          ]
-        : [];
+          ];
+        } catch {
+          // Fehler beim Parsen ignorieren
+        }
+      }
+      return [];
     },
     [app, viewTechDocsLink, t],
   );
